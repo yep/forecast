@@ -13,20 +13,25 @@ struct WeatherOverlayView: View {
         if let legalPageURL = viewModel.legalPageURL {
             VStack(alignment: .trailing) {
                 Spacer()
-                HStack {
+                VStack {
                     Link(destination: legalPageURL) {
                         AsyncImage(url: viewModel.attributionLogoURL, scale: 4.0)
                     }
                     .foregroundStyle(.clear)
                     .frame(width: 50)
+                    #if os(watchOS)
+                    .padding(.bottom, -20)
+                    #else
+                    .padding(0)
+                    #endif
 
                     Link(destination: legalPageURL) {
-                        Text("Attribution")
+                        Text("Other data sources")
                     }
                     .buttonStyle(.borderless)
                     .foregroundStyle(.foreground)
-                    .padding(.top, 2)
                     .font(.system(size: 12, weight: .light))
+                    .padding(0)
                 }
                 #if os(watchOS)
                 .padding(.bottom, -30)

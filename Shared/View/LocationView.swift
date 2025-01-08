@@ -17,21 +17,54 @@ struct LocationView: View {
                     Text(" ") // otherwise search field is not shown on watch osw
                 }
                 #endif
-                List($viewModel.searchResults) { searchResult in
-                    if searchResult.location.wrappedValue != nil {
-                        let searchResultTitle = viewModel.searchResultTitle(for: searchResult.wrappedValue)
-                        
-                        NavigationLink(searchResultTitle) {
-                            WeatherView(viewModel: ViewModel(), searchResult: searchResult.wrappedValue)
+                
+                List() {
+                    if viewModel.cities.isEmpty {
+                        Text("Please search for your first city")
+                            .multilineTextAlignment(.center)
+                    } else {
+                        if !viewModel.cities.isEmpty {
+                            Section {
+                                ForEach($viewModel.cities) { city in
+                                    let city = city.wrappedValue
+                                    NavigationLink(city.longName) {
+                                        WeatherView(viewModel: viewModel, city: city)
+                                    }
+                                }
+                                .onDelete { indexSet in
+                                    viewModel.delete(indexSet: indexSet)
+                                }
+                            } header: {
+                                Text("Cities")
+                            } footer: {
+                                Text("Swipe left to delete city")
+                            }
                         }
                     }
                 }
+                .searchable(text: $viewModel.searchString, prompt: "Enter city") {
+                    ForEach($viewModel.searchSuggestions) { city in
+                        Text(city.wrappedValue.longName)
+                            .lineLimit(0)
+                            .searchCompletion(city.wrappedValue.longName)
+                    }
+                    .tint(Color.primary)
+                    .searchSuggestions(.automatic, for: .content)
+                }
+                .onChange(of: viewModel.searchString) {
+                    viewModel.getSearchSuggestions()
+                }
+                .onSubmit(of: .search) {
+                    viewModel.search()
+                }
             }
-            .searchable(text: $viewModel.searchText.name)
-            .onSubmit(of: .search) {
-                viewModel.search()
-            }
-            .navigationTitle("Search City")
+        }
+        .navigationTitle("Forecast")
+        .onAppear {
+            viewModel.updateCities()
+        }
+        .onDisappear() {
+            viewModel.updateCities()
         }
     }
     
@@ -43,7 +76,6 @@ struct LocationView: View {
 
 #Preview {
     let viewModel = ViewModel()
-    viewModel.searchResults = [SearchResult(name: "Berlin", info: "Deutschland")]
-    return LocationView(viewModel: viewModel)
+    viewModel.cities = [City(name: "Berlin", info: "Deutschland")]
+    return LocationView(viewModel: viewModel).frame(width: 300)
 }
-

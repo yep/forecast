@@ -8,18 +8,13 @@ import Charts
 import WeatherKit
 
 struct WeatherView: View {
-    @ObservedObject var viewModel = ViewModel()
+    @ObservedObject var viewModel: ViewModel
     @Environment(\.colorScheme) private var colorScheme
-    var searchResult: SearchResult
-    var watchOS = false
+    var city: City
 
-    init(viewModel: ViewModel, searchResult: SearchResult) {
-        self.searchResult = searchResult
-        #if os(watchOS)
-        watchOS = true
-        #endif
-        
-        UserDefaults.standard.set(searchResult: searchResult)
+    init(viewModel: ViewModel, city: City) {
+        self.viewModel = viewModel
+        self.city = city
     }
     
     fileprivate func lineMark(_ data: GraphData) -> some ChartContent {
@@ -40,7 +35,7 @@ struct WeatherView: View {
         )
         .foregroundStyle(Color.clear)
         .annotation(position: .overlay, content: {
-            if !watchOS || (data.index % 2 == 0 && data.series == GraphData.Series.tempLow.rawValue) {
+            if !viewModel.watchOS || (data.index % 2 == 0 && data.series == GraphData.Series.tempLow.rawValue) {
                 ZStack {
                     Circle()
                         .fill(.background)
@@ -50,7 +45,7 @@ struct WeatherView: View {
             }
         })
         .annotation(spacing: 10) {
-            if !watchOS || (data.index % 2 == 0 && data.series == GraphData.Series.tempHigh.rawValue) {
+            if !viewModel.watchOS || (data.index % 2 == 0 && data.series == GraphData.Series.tempHigh.rawValue) {
                 Text("\(Int(data.temperature.value))°")
                     .font(.caption)
             }
@@ -66,7 +61,7 @@ struct WeatherView: View {
         }
         .chartXAxis(content: {
             AxisMarks(values: .stride(by: .day)) { value in
-                if !watchOS,
+                if !viewModel.watchOS,
                    let date = value.as(Date.self)
                 {
                     let weekday = Calendar.current.component(.weekday, from: date)
@@ -76,20 +71,20 @@ struct WeatherView: View {
                 }
             }
         })
-        .navigationTitle(searchResult.name)
+        .navigationTitle(city.name)
         .padding()
         .overlay {
             WeatherOverlayView(viewModel: viewModel)
         }
         .onAppear {
-            viewModel.getForecast(searchResult: searchResult)
+            viewModel.getForecast(forCity: city)
             viewModel.getAttribution(colorScheme: colorScheme)
         }
         #if !os(watchOS)
         .toolbar {
             ToolbarItem() {
                 Button() {
-                    viewModel.getForecast(searchResult: searchResult, useCache: false)
+                    viewModel.getForecast(forCity: city)
                 } label: {
                     Image(systemName: "arrow.clockwise")
                 }
@@ -101,7 +96,7 @@ struct WeatherView: View {
 
 #Preview {
     let day = TimeInterval(24 * 60 * 60)
-    let searchResult = SearchResult(name: "Berlin", info: "")
+    let searchResult = City(name: "Berlin", info: "")
     
     var result: [GraphData] = []
     result.append(GraphData(index: 0, date: Date(), day: 0, series: GraphData.Series.tempHigh.rawValue, temperature: .init(value: 10, unit: .celsius), symbol: "cloud.sun"))
@@ -119,7 +114,7 @@ struct WeatherView: View {
     let viewModel = ViewModel()
     viewModel.graphData = result
     
-    let weatherView = WeatherView(viewModel: viewModel, searchResult: searchResult)
+    let weatherView = WeatherView(viewModel: viewModel, city: searchResult)
     
-    return weatherView
+    return weatherView.frame(width: 300)
 }

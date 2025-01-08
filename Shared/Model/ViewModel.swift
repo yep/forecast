@@ -6,75 +6,106 @@
 import Foundation
 import SwiftUI
 import Charts
-import CoreLocation
-import WeatherKit
+import MapKit
+@preconcurrency import WeatherKit
 
-final class ViewModel: ObservableObject {
-    @Published var searchResults: [SearchResult] = []
-    @Published var searchText = SearchResult()
+final class ViewModel: NSObject, ObservableObject {
+    @Published var searchSuggestions: [City] = []
+    @Published var cities: [City] = []
+    @Published var searchString = ""
     @Published var graphData: [GraphData] = []
     @Published var legalPageURL = URL(string: "")
     @Published var attributionLogoURL = URL(string: "")
 
-    static let searchOnMapString = "Search on Map"
+    var watchOS = false
+#if !os(watchOS)
+    private let searchCompleter = MKLocalSearchCompleter()
+#endif
     private let dateFormatter = DateFormatter()
     private var forecasts: Forecast<DayWeather>?
+    private var searchSubmitted = false
     
-    init() {
+    override init() {
+        super.init()
+                
         dateFormatter.calendar = Calendar.current
         dateFormatter.dateFormat = "dd"
         dateFormatter.dateStyle = .short
         dateFormatter.timeStyle = .none
-                
-        // restore last search result
-        searchResults = UserDefaults.standard.getSearchResult()
+        
+        #if os(watchOS)
+            watchOS = true
+        #else
+            searchCompleter.delegate = self
+            searchCompleter.resultTypes = .address
+        #endif
     }
     
-    func search() {
-        searchResults = []
-        
+    func updateCities() {
+        cities = UserDefaults.standard.getCities()
+    }
+    
+    func getLocation(forAddress addressString: String, result: @escaping (City) -> Void) {
         let geoCoder = CLGeocoder()
-        geoCoder.geocodeAddressString(searchText.name) { (placemark: [CLPlacemark]?, error: Error?) in
+        geoCoder.geocodeAddressString(addressString) { [weak self] (placemarks: [CLPlacemark]?, error: Error?) in
             if let error {
-                print(error)
-            } else {
-                var searchResult = SearchResult()
-                for placemark in placemark ?? [] {
-                    if let city = placemark.locality {
-                        if let country = placemark.country {
-                            searchResult = SearchResult(name: city, info: country)
-                            searchResult.location = placemark.location
-                        } else {
-                            searchResult = SearchResult(name: city, info: "")
-                        }
+                print("error: get location for address failed: \(error.localizedDescription)")
+            } else if let placemarks = placemarks {
+                var searchResult: City
+                for placemark in placemarks {
+                    var name = ""
+                    if let locality = placemark.locality {
+                        name = locality
+                    } else if let area = placemark.administrativeArea {
+                        name = area
+                    } else {
+                        print("error: placemark has no locality and no administrative area: \(placemark)")
+                        return
+                    }
+                    
+                    searchResult = City(name: name, info: placemark.country ?? "")
+                    searchResult.location = placemark.location
+
+                    if name != "" && searchResult.info != "" {
+                        result(searchResult)
                     }
                 }
-                if searchResult.name != "" && searchResult.info != "" {
-                    self.searchResults.append(searchResult)
-                }
-                // self.searchResults.append(SearchResult(name: Self.searchOnMapString, info: ""))
-                self.objectWillChange.send()
+                self?.objectWillChange.send()
             }
         }
     }
     
-    func getForecast(searchResult: SearchResult, useCache: Bool = true) {
-        guard let location = searchResult.location else {
+    func getForecast(forCity city: City) {
+        #if os(watchOS)
+            getForecastAndLocation(for: city)
+        #else
+            if city.location != nil {
+                getForecast(forLocation: city)
+            } else {
+                getForecastAndLocation(for: city)
+            }
+        #endif
+    }
+    
+    fileprivate func getForecastAndLocation(for city: City) {
+        getLocation(forAddress: city.longName) { (city: City) in
+            self.getForecast(forLocation: city)
+        }
+    }
+
+    func getForecast(forLocation city: City) {
+        guard let location = city.location else {
+            print("error: no location when getting forecast")
             return
         }
         
-        if let forecasts, useCache {
-            print("using cache")
-            self.handle(forecasts: forecasts)
-        } else {
-            Task { [weak self] in
-                do {
-                    let forecasts = try await WeatherService.shared.weather(for: location, including: .daily)
-                    self?.forecasts = forecasts
-                    self?.handle(forecasts: forecasts)
-                } catch {
-                    print("error: \(error)")
-                }
+        Task { [weak self] in
+            do {
+                let forecasts = try await WeatherService.shared.weather(for: location, including: .daily)
+                self?.forecasts = forecasts
+                self?.handle(forecasts: forecasts)
+            } catch {
+                print("error: \(error)")
             }
         }
     }
@@ -98,14 +129,6 @@ final class ViewModel: ObservableObject {
         }
     }
     
-    func searchResultTitle(for searchResult: SearchResult) -> String {
-        var text = searchResult.name
-        if searchResult.info != "" {
-            text = text.appending(" (\(searchResult.info))")
-        }
-        return text
-    }
-    
     func weekdayString(weekday: Int) -> String {
         return dateFormatter.shortWeekdaySymbols[weekday - 1]
     }
@@ -127,5 +150,56 @@ final class ViewModel: ObservableObject {
             }
         }
     }
+    
+    func getSearchSuggestions() {
+        #if !os(watchOS)
+            if searchSubmitted {
+                searchSubmitted = false
+            } else {
+                searchCompleter.queryFragment = searchString
+            }
+        #endif
+    }
+    
+    func search() {
+        if searchString != "" {
+            getLocation(forAddress: searchString) { [weak self] (city: City) in
+                UserDefaults.standard.add(city: city)
+                self?.cities = UserDefaults.standard.getCities()
+            }
+        }
+        searchSuggestions = []
+        searchString = ""
+        searchSubmitted = true
+    }
+    
+    func delete(indexSet: IndexSet) {
+        if let index = indexSet.first {
+            UserDefaults.standard.deleteCity(at: index)            
+        }
+        cities = UserDefaults.standard.getCities()
+    }
 }
 
+#if !os(watchOS)
+extension ViewModel: MKLocalSearchCompleterDelegate {
+    func completerDidUpdateResults(_ completer: MKLocalSearchCompleter) {
+        searchSuggestions = []
+
+        if completer.results.count == 1 {
+            let addressString = "\(completer.results[0].title), \(completer.results[0].subtitle)"
+            getLocation(forAddress: addressString) { [weak self] (city: City) in
+                self?.searchSuggestions.append(city)
+            }
+        } else {
+            for result in completer.results {
+                searchSuggestions.append(City(name: result.title, info: result.subtitle))
+            }
+        }
+    }
+    
+    func completer(_ completer: MKLocalSearchCompleter, didFailWithError error: any Error) {
+        print("did fail with error: \(error.localizedDescription)")
+    }
+}
+#endif
