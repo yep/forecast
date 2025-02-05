@@ -4,11 +4,13 @@
 //
 
 import Foundation
+import WeatherKit
 
 struct GraphData: Identifiable {
     enum Series: String {
-        case tempHigh = "temp high"
-        case tempLow = "temp low"
+        case temperatureHigh = "temperature high"
+        case temperatureLow  = "temperature low"
+        case precipitation   = "precipitation"
     }
     
     var id: TimeInterval {
@@ -16,10 +18,9 @@ struct GraphData: Identifiable {
             date.timeIntervalSinceReferenceDate
         }
     }
-    var index: Int
     var date: Date
-    var day: Int
-    var series: String // tempMin or tempMax
-    var temperature: Measurement<UnitTemperature>
-    var symbol: String
+    var series: String // temperatureHigh or temperatureLow
+    var temperature: Measurement<UnitTemperature> = .init(value: .infinity, unit: .celsius)
+    var precipitation: Measurement<UnitSpeed> = .init(value: .infinity, unit: .kilometersPerHour)
+    var symbol = ""
 }

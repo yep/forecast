@@ -8,83 +8,72 @@ import Charts
 import WeatherKit
 
 struct WeatherView: View {
-    @ObservedObject var viewModel: ViewModel
-    @Environment(\.colorScheme) private var colorScheme
-    var city: City
+    @ObservedObject var weatherModel = WeatherModel()
+    static var measurementFormatStyle = Measurement.FormatStyle()
 
-    init(viewModel: ViewModel, city: City) {
-        self.viewModel = viewModel
-        self.city = city
-    }
-    
-    fileprivate func lineMark(_ data: GraphData) -> some ChartContent {
-        return LineMark(
-            x: .value("date", data.date),
-            y: .value("temperature", data.temperature.value),
-            series: .value("series", data.series)
-        )
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .foregroundStyle(Color.orange)
-        .interpolationMethod(.catmullRom)
-    }
-    
-    fileprivate func pointMark(_ data: GraphData) -> some ChartContent {
-        return PointMark(
-            x: .value("date", data.date),
-            y: .value("temperature", data.temperature.value)
-        )
-        .foregroundStyle(Color.clear)
-        .annotation(position: .overlay, content: {
-            if !viewModel.watchOS || (data.index % 2 == 0 && data.series == GraphData.Series.tempLow.rawValue) {
-                ZStack {
-                    Circle()
-                        .fill(.background)
-                        .frame(width: 22, height: 22)
-                    Image(systemName: data.symbol)
-                }
-            }
-        })
-        .annotation(spacing: 10) {
-            if !viewModel.watchOS || (data.index % 2 == 0 && data.series == GraphData.Series.tempHigh.rawValue) {
-                Text("\(Int(data.temperature.value))°")
-                    .font(.caption)
-            }
-        }
+    @Environment(\.colorScheme) private var colorScheme
+
+    init(weatherModel: WeatherModel) {
+        self.weatherModel = weatherModel
+        Self.measurementFormatStyle.numberFormatStyle = .number.precision(.integerAndFractionLength(integerLimits: 1...2, fractionLimits: 0...0))
+        Self.measurementFormatStyle.hidesScaleName = true
     }
     
     var body: some View {
-        Chart() {
-            ForEach(viewModel.graphData, id: \.id) { data in
-                lineMark(data)
-                pointMark(data)
-            }
-        }
-        .chartXAxis(content: {
-            AxisMarks(values: .stride(by: .day)) { value in
-                if !viewModel.watchOS,
-                   let date = value.as(Date.self)
-                {
-                    let weekday = Calendar.current.component(.weekday, from: date)
-                    AxisValueLabel {
-                        Text(viewModel.weekdayString(weekday: weekday))
+        GeometryReader { geometryProxy in
+            List() {
+                Section("Current Weather") {
+                    if weatherModel.currentWeather == nil {
+                        Text("Loading, please wait...")
+                    } else {
+                        WeatherCurrentView(weatherModel: weatherModel)
+                    }
+                }
+                
+                if weatherModel.currentWeather != nil {
+                    Section("Daily Forecast") {
+                        WeatherScrollView() {
+                            WeatherGraphView(weatherModel: weatherModel, kind: .daily, geometryProxy: geometryProxy)
+                        }
+                        .frame(width: width(for: geometryProxy), height: height(for: geometryProxy))
+                    }
+                    
+                    Section("Hourly Forecast") {
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            WeatherGraphView(weatherModel: weatherModel, kind: .hourly, geometryProxy: geometryProxy)
+                        }
+                        .frame(width: width(for: geometryProxy), height: height(for: geometryProxy))
+                    }
+                    
+                    if let minutelyGraphData = weatherModel.minutelyGraphData,
+                       let unitSymbol = minutelyGraphData.first?.precipitation.unit.symbol
+                    {
+                        Section("Rain Forecast (\(unitSymbol))") {
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                WeatherGraphView(weatherModel: weatherModel, kind: .minutely, geometryProxy: geometryProxy)
+                            }
+                            .frame(width: width(for: geometryProxy), height: height(for: geometryProxy))
+                        }
+                    }
+                    
+                    Section() {
+                        WeatherAttributionView(weatherModel: weatherModel)
+                        .frame(width: width(for: geometryProxy), height: 30)
                     }
                 }
             }
-        })
-        .navigationTitle(city.name)
-        .padding()
-        .overlay {
-            WeatherOverlayView(viewModel: viewModel)
         }
+        .navigationTitle(weatherModel.city?.name ?? "")
         .onAppear {
-            viewModel.getForecast(forCity: city)
-            viewModel.getAttribution(colorScheme: colorScheme)
+            weatherModel.onAppear(colorScheme: colorScheme)
         }
         #if !os(watchOS)
         .toolbar {
             ToolbarItem() {
                 Button() {
-                    viewModel.getForecast(forCity: city)
+                    Task {
+                        await weatherModel.getForecast()
+                    }
                 } label: {
                     Image(systemName: "arrow.clockwise")
                 }
@@ -92,29 +81,34 @@ struct WeatherView: View {
         }
         #endif
     }
+    
+    // MARK: - Private
+    
+    fileprivate func width(for geometryProxy: GeometryProxy) -> CGFloat {
+        #if os(watchOS)
+            return geometryProxy.size.width - 20
+        #else
+            return geometryProxy.size.width - 40
+        #endif
+    }
+    
+    fileprivate func height(for geometryProxy: GeometryProxy) -> CGFloat {
+        #if os(watchOS)
+            return geometryProxy.size.height
+        #else
+            return geometryProxy.size.height * 0.4
+        #endif
+    }
 }
 
 #Preview {
-    let day = TimeInterval(24 * 60 * 60)
-    let searchResult = City(name: "Berlin", info: "")
+    let weatherModel = WeatherModel(city: City(name: "Berlin"))
+    let navigationView = NavigationView {
+        WeatherView(weatherModel: weatherModel)
+    }
+    #if os(macOS)
+    .frame(width: 300)
+    #endif
     
-    var result: [GraphData] = []
-    result.append(GraphData(index: 0, date: Date(), day: 0, series: GraphData.Series.tempHigh.rawValue, temperature: .init(value: 10, unit: .celsius), symbol: "cloud.sun"))
-    
-    result.append(GraphData(index: 1, date: Date().addingTimeInterval(day), day: 1, series: GraphData.Series.tempHigh.rawValue, temperature: .init(value: 11, unit: .celsius), symbol: "cloud.sun"))
-    
-    result.append(GraphData(index: 2, date: Date().addingTimeInterval(day * 2), day: 2, series: GraphData.Series.tempHigh.rawValue, temperature: .init(value: 11, unit: .celsius), symbol: "cloud.sun"))
-
-    result.append(GraphData(index: 0, date: Date(), day: 0, series: GraphData.Series.tempLow.rawValue, temperature: .init(value: 11, unit: .celsius), symbol: "cloud.sun"))
-    
-    result.append(GraphData(index: 1, date: Date().addingTimeInterval(day), day: 1, series: GraphData.Series.tempLow.rawValue,  temperature: .init(value: 13, unit: .celsius), symbol: "cloud.sun"))
-    
-    result.append(GraphData(index: 2, date: Date().addingTimeInterval(day * 2), day: 2, series: GraphData.Series.tempLow.rawValue,  temperature: .init(value: 12, unit: .celsius), symbol: "cloud.sun"))
-
-    let viewModel = ViewModel()
-    viewModel.graphData = result
-    
-    let weatherView = WeatherView(viewModel: viewModel, city: searchResult)
-    
-    return weatherView.frame(width: 300)
+    return navigationView
 }

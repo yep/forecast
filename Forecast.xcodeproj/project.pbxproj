@@ -34,13 +34,24 @@
 			name = "Embed Watch Content";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		01F6591E2D356EC500FC2BA8 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		010DA1962CCC2F7000C1850B /* AVKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVKit.framework; path = Platforms/WatchOS.platform/Developer/SDKs/WatchOS11.0.sdk/System/Library/Frameworks/AVKit.framework; sourceTree = DEVELOPER_DIR; };
 		0126ABD12CCAB8EE005AF2FF /* Forecast.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Forecast.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		0126ABF72CCAB8F0005AF2FF /* Forecast.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Forecast.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		01AA676A2CDA710F0086361B /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		01F6590E2D356EC400FC2BA8 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = /System/Library/Frameworks/WidgetKit.framework; sourceTree = "<absolute>"; };
+		01F659102D356EC400FC2BA8 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = /System/Library/Frameworks/SwiftUI.framework; sourceTree = "<absolute>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -51,12 +62,12 @@
 			);
 			target = 0126ABD02CCAB8EE005AF2FF /* Forecast */;
 		};
-		01AA67692CDA63180086361B /* Exceptions for "Forecast WatchApp" folder in "Forecast WatchApp" target */ = {
+		01F659902D35C4E300FC2BA8 /* Exceptions for "Forecast WatchApp" folder in "ForecastWatchApp" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				"Forecast-WatchApp-Info.plist",
 			);
-			target = 0126ABF62CCAB8F0005AF2FF /* Forecast WatchApp */;
+			target = 0126ABF62CCAB8F0005AF2FF /* ForecastWatchApp */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
@@ -72,9 +83,10 @@
 		0126ABFB2CCAB8F0005AF2FF /* Forecast WatchApp */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				01AA67692CDA63180086361B /* Exceptions for "Forecast WatchApp" folder in "Forecast WatchApp" target */,
+				01F659902D35C4E300FC2BA8 /* Exceptions for "Forecast WatchApp" folder in "ForecastWatchApp" target */,
 			);
-			path = "Forecast WatchApp";
+			name = "Forecast WatchApp";
+			path = ForecastWatchApp;
 			sourceTree = "<group>";
 		};
 		01296D0E2CCB7D660066370C /* Shared */ = {
@@ -105,7 +117,8 @@
 		010DA1952CCC2F7000C1850B /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				010DA1962CCC2F7000C1850B /* AVKit.framework */,
+				01F6590E2D356EC400FC2BA8 /* WidgetKit.framework */,
+				01F659102D356EC400FC2BA8 /* SwiftUI.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -142,6 +155,7 @@
 				0126ABCE2CCAB8EE005AF2FF /* Frameworks */,
 				0126ABCF2CCAB8EE005AF2FF /* Resources */,
 				0126AC202CCAB8F1005AF2FF /* Embed Watch Content */,
+				01F6591E2D356EC500FC2BA8 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
@@ -159,9 +173,9 @@
 			productReference = 0126ABD12CCAB8EE005AF2FF /* Forecast.app */;
 			productType = "com.apple.product-type.application";
 		};
-		0126ABF62CCAB8F0005AF2FF /* Forecast WatchApp */ = {
+		0126ABF62CCAB8F0005AF2FF /* ForecastWatchApp */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 0126AC1D2CCAB8F1005AF2FF /* Build configuration list for PBXNativeTarget "Forecast WatchApp" */;
+			buildConfigurationList = 0126AC1D2CCAB8F1005AF2FF /* Build configuration list for PBXNativeTarget "ForecastWatchApp" */;
 			buildPhases = (
 				0126ABF32CCAB8F0005AF2FF /* Sources */,
 				0126ABF42CCAB8F0005AF2FF /* Frameworks */,
@@ -175,7 +189,7 @@
 				0126ABFB2CCAB8F0005AF2FF /* Forecast WatchApp */,
 				01296D0E2CCB7D660066370C /* Shared */,
 			);
-			name = "Forecast WatchApp";
+			name = ForecastWatchApp;
 			packageProductDependencies = (
 			);
 			productName = "WhatWeather Watch App";
@@ -189,7 +203,7 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 1600;
+				LastSwiftUpdateCheck = 1620;
 				LastUpgradeCheck = 1610;
 				TargetAttributes = {
 					0126ABD02CCAB8EE005AF2FF = {
@@ -217,7 +231,7 @@
 			projectRoot = "";
 			targets = (
 				0126ABD02CCAB8EE005AF2FF /* Forecast */,
-				0126ABF62CCAB8F0005AF2FF /* Forecast WatchApp */,
+				0126ABF62CCAB8F0005AF2FF /* ForecastWatchApp */,
 			);
 		};
 /* End PBXProject section */
@@ -262,7 +276,7 @@
 		0126ABFA2CCAB8F0005AF2FF /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			platformFilter = ios;
-			target = 0126ABF62CCAB8F0005AF2FF /* Forecast WatchApp */;
+			target = 0126ABF62CCAB8F0005AF2FF /* ForecastWatchApp */;
 			targetProxy = 0126ABF92CCAB8F0005AF2FF /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -389,15 +403,15 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = "Forecast WatchApp/Forecast WatchApp.entitlements";
+				CODE_SIGN_ENTITLEMENTS = ForecastWatchApp/ForecastWatchApp.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
-				DEVELOPMENT_ASSET_PATHS = "\"Forecast WatchApp/Preview Content\"";
+				CURRENT_PROJECT_VERSION = 15;
+				DEVELOPMENT_ASSET_PATHS = "\"ForecastWatchApp/Preview Content\"";
 				DEVELOPMENT_TEAM = 2AD47BTDQ6;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "Forecast WatchApp/Forecast-WatchApp-Info.plist";
+				INFOPLIST_FILE = "ForecastWatchApp/Forecast-WatchApp-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = Forecast;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.github.yep.ios.weatherapp;
@@ -406,7 +420,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.github.yep.ios.weatherapp.watch;
 				PRODUCT_NAME = Forecast;
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -424,15 +438,15 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = "Forecast WatchApp/Forecast WatchApp.entitlements";
+				CODE_SIGN_ENTITLEMENTS = ForecastWatchApp/ForecastWatchApp.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
-				DEVELOPMENT_ASSET_PATHS = "\"Forecast WatchApp/Preview Content\"";
+				CURRENT_PROJECT_VERSION = 15;
+				DEVELOPMENT_ASSET_PATHS = "\"ForecastWatchApp/Preview Content\"";
 				DEVELOPMENT_TEAM = 2AD47BTDQ6;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "Forecast WatchApp/Forecast-WatchApp-Info.plist";
+				INFOPLIST_FILE = "ForecastWatchApp/Forecast-WatchApp-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = Forecast;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.github.yep.ios.weatherapp;
@@ -441,7 +455,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.github.yep.ios.weatherapp.watch;
 				PRODUCT_NAME = Forecast;
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -464,7 +478,7 @@
 				CODE_SIGN_ENTITLEMENTS = Forecast/Forecast.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 10;
+				CURRENT_PROJECT_VERSION = 15;
 				DEVELOPMENT_ASSET_PATHS = "\"Forecast/Preview Content\"";
 				DEVELOPMENT_TEAM = 2AD47BTDQ6;
 				ENABLE_PREVIEWS = YES;
@@ -483,7 +497,7 @@
 					"@executable_path/Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.github.yep.ios.weatherapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -493,7 +507,7 @@
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
+				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
@@ -507,7 +521,7 @@
 				CODE_SIGN_ENTITLEMENTS = Forecast/Forecast.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 10;
+				CURRENT_PROJECT_VERSION = 15;
 				DEVELOPMENT_ASSET_PATHS = "\"Forecast/Preview Content\"";
 				DEVELOPMENT_TEAM = 2AD47BTDQ6;
 				ENABLE_PREVIEWS = YES;
@@ -526,7 +540,7 @@
 					"@executable_path/Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.github.yep.ios.weatherapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -536,7 +550,7 @@
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
+				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VALIDATE_PRODUCT = YES;
 			};
@@ -554,7 +568,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		0126AC1D2CCAB8F1005AF2FF /* Build configuration list for PBXNativeTarget "Forecast WatchApp" */ = {
+		0126AC1D2CCAB8F1005AF2FF /* Build configuration list for PBXNativeTarget "ForecastWatchApp" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				0126AC1E2CCAB8F1005AF2FF /* Debug */,

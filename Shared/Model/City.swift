@@ -22,12 +22,7 @@ struct City: Identifiable, Hashable {
     }
     var location: CLLocation?
     
-    init() {
-        name = ""
-        info = ""
-    }
-    
-    init(name: String, info: String) {
+    init(name: String = "", info: String = "") {
         self.name = name
         self.info = info
     }

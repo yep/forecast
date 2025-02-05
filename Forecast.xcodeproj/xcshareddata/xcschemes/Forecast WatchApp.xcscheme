@@ -17,7 +17,7 @@
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "0126ABF62CCAB8F0005AF2FF"
                BuildableName = "Forecast.app"
-               BlueprintName = "Forecast WatchApp"
+               BlueprintName = "ForecastWatchApp"
                ReferencedContainer = "container:Forecast.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -60,7 +60,7 @@
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "0126ABF62CCAB8F0005AF2FF"
             BuildableName = "Forecast.app"
-            BlueprintName = "Forecast WatchApp"
+            BlueprintName = "ForecastWatchApp"
             ReferencedContainer = "container:Forecast.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
@@ -77,7 +77,7 @@
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "0126ABF62CCAB8F0005AF2FF"
             BuildableName = "Forecast.app"
-            BlueprintName = "Forecast WatchApp"
+            BlueprintName = "ForecastWatchApp"
             ReferencedContainer = "container:Forecast.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>

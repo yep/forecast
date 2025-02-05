@@ -7,22 +7,23 @@ import SwiftUI
 
 @main
 struct ForecastApp: App {
-#if os(macOS)
-    fileprivate static let size = CGFloat(500)
-#endif
+    #if os(macOS)
+    fileprivate static let sizeMin = CGSize(width: 430, height: 600)
+    fileprivate static let sizeMax = CGSize(width: 800, height: 1200)
+    #endif
     
     var body: some Scene {
-#if os(macOS)
-        WindowGroup {
-            LocationView()
-                .frame(maxWidth: Self.size, maxHeight: Self.size)
-        }
-        .defaultSize(width: Self.size, height: Self.size)
-        .windowResizability(.contentSize)
-#else
-        WindowGroup {
-            LocationView()
-        }
-#endif
+        #if os(macOS)
+            WindowGroup {
+                LocationView()
+                    .frame(minWidth: Self.sizeMin.width, maxWidth: Self.sizeMax.width, minHeight: Self.sizeMin.height, maxHeight: Self.sizeMax.height)
+            }
+            .defaultSize(width: Self.sizeMin.width, height: Self.sizeMin.height)
+            .windowResizability(.contentSize)
+        #else
+            WindowGroup {
+                LocationView()
+            }
+        #endif
     }
 }
