@@ -1,6 +1,20 @@
 //
-//  ContentViewModel.swift
-//  Forecast
+//  ViewModel.swift
+//  Forecast - Graphical weather forecast for the next 10 days
+//  Copyright (C) 2025 Jahn Bertsch
+//
+//  This program is free software: you can redistribute it and/or modify
+//  it under the terms of the GNU General Public License as published by
+//  the Free Software Foundation, either version 3 of the License, or
+//  (at your option) any later version.
+//
+//  This program is distributed in the hope that it will be useful,
+//  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//  GNU General Public License for more details.
+//
+//  You should have received a copy of the GNU General Public License
+//  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 //
 
 import SwiftUI
@@ -14,62 +28,52 @@ final class ViewModel: NSObject, ObservableObject {
     var cities: [City] = []
     var searchString = ""
 
-    #if !os(watchOS)
     private let searchCompleter = MKLocalSearchCompleter()
-    #endif
 
     override init() {
-        super.init()
- 
-        #if !os(watchOS)
-            searchCompleter.delegate = self
-            searchCompleter.resultTypes = .address
-        #endif
+        super.init() 
+        searchCompleter.delegate = self
+        searchCompleter.resultTypes = .address
     }
     
     func onAppear() {
         updateCities()
         
         // restore last selected city
-        if let selectedCity = UserDefaults.standard.selectedCity() {
+        if let selectedCity = UserDefaults.appGroup.selectedCity() {
             navigationPath.append(selectedCity)
         }
     }
     
     func updateCities() {
-        cities = UserDefaults.standard.getCities()
+        cities = UserDefaults.appGroup.getCities()
     }
     
     func getSearchSuggestions() {
-        #if !os(watchOS)
-            searchCompleter.queryFragment = searchString
-        #endif
+        searchCompleter.queryFragment = searchString.trimmingCharacters(in: .whitespaces)
     }
     
     func search() async {
         if searchString != "",
            let city = await weatherModel.getLocation(forAddress: searchString)
         {
-            UserDefaults.standard.add(city: city)
-            cities = UserDefaults.standard.getCities()
+            UserDefaults.appGroup.add(city: city)
+            cities = UserDefaults.appGroup.getCities()
         }
 
         searchSuggestions = []
         searchString = ""
-        #if !os(watchOS)
-            searchCompleter.cancel()
-        #endif
+        searchCompleter.cancel()
     }
     
     func delete(indexSet: IndexSet) {
         if let index = indexSet.first {
-            UserDefaults.standard.delete(cityIndex: index)
-            cities = UserDefaults.standard.getCities()
+            UserDefaults.appGroup.delete(cityIndex: index)
+            cities = UserDefaults.appGroup.getCities()
         }
     }
 }
 
-#if !os(watchOS)
 extension ViewModel: @preconcurrency MKLocalSearchCompleterDelegate {
     func completerDidUpdateResults(_ completer: MKLocalSearchCompleter) {
         searchSuggestions = []
@@ -89,7 +93,6 @@ extension ViewModel: @preconcurrency MKLocalSearchCompleterDelegate {
     }
     
     func completer(_ completer: MKLocalSearchCompleter, didFailWithError error: any Error) {
-        Logging.logger.log("did fail with error: \(error.localizedDescription)")
+        Logging.logger.log("search completer did fail with error: \(error.localizedDescription)")
     }
 }
-#endif

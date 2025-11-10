@@ -1,16 +1,28 @@
 //
 //  WeatherModel.swift
-//  Forecast
+//  Forecast - Graphical weather forecast for the next 10 days
+//  Copyright (C) 2025 Jahn Bertsch
+//
+//  This program is free software: you can redistribute it and/or modify
+//  it under the terms of the GNU General Public License as published by
+//  the Free Software Foundation, either version 3 of the License, or
+//  (at your option) any later version.
+//
+//  This program is distributed in the hope that it will be useful,
+//  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//  GNU General Public License for more details.
+//
+//  You should have received a copy of the GNU General Public License
+//  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 //
 
 import SwiftUI
 import Charts
-import MapKit
-import Network
+@preconcurrency import MapKit
 @preconcurrency import WeatherKit
 
-@MainActor @Observable
-final class WeatherModel: NSObject, ObservableObject {
+@MainActor @Observable final class WeatherModel: NSObject {
     var city: City?
     var dailyGraphData: [GraphData] = []
     var houlyGraphData: [GraphData] = []
@@ -18,14 +30,18 @@ final class WeatherModel: NSObject, ObservableObject {
     var currentWeather: CurrentWeather?
     var legalPageURL = URL(string: "")
     var attributionLogoURL = URL(string: "")
-    var summary = ""
+
+    private var daysToDisplay: Int
+    private static let currentTemperatureUnit = UnitTemperature.init(forLocale: Locale.current)
 
     override init() {
+        daysToDisplay = Int.max
         super.init()
     }
     
-    init(city: City) {
+    init(city: City, daysToDisplay: Int? = nil) {
         self.city = city
+        self.daysToDisplay = daysToDisplay ?? Int.max
         super.init()
     }
     
@@ -34,35 +50,39 @@ final class WeatherModel: NSObject, ObservableObject {
             Logging.logger.log("error: no color scheme when getting forecast")
             return
         }
-        
+        UserDefaults.appGroup.set(selectedCity: city)
+
         Task {
-            await getForecast()
+            _ = await getForecast()
             await getAttribution(colorScheme: colorScheme)
         }
-        UserDefaults.standard.set(selectedCity: city)
     }
 
     func getLocation(forAddress addressString: String) async -> City? {
-        var searchResult: City?
+        var searchResult: City? = nil
+        guard let geocodingRequest = MKGeocodingRequest(addressString: addressString) else {
+            Logging.logger.log("error: no address string provided")
+            return nil
+        }
         
-        let geoCoder = CLGeocoder()
         do {
-            let placemarks = try await geoCoder.geocodeAddressString(addressString)
-            for placemark in placemarks {
+            let mapItems = try await geocodingRequest.mapItems
+                        
+            for mapItem in mapItems {
                 var name = ""
-                if let locality = placemark.locality {
+                if let locality = mapItem.placemark.locality {
                     name = locality
-                } else if let area = placemark.administrativeArea {
+                } else if let area = mapItem.placemark.administrativeArea {
                     name = area
                 } else {
-                    Logging.logger.log("error: placemark has no locality and no administrative area: \(placemark)")
+                    Logging.logger.log("error: placemark has no locality and no administrative area: \(mapItem)")
                     return nil
                 }
                 
-                searchResult = City(name: name, info: placemark.country ?? "")
-                searchResult?.location = placemark.location                
-                self.objectWillChange.send()
+                searchResult = City(name: name, info: mapItem.placemark.country ?? "")
+                searchResult?.location = mapItem.location                
             }
+            print()
         } catch {
             Logging.logger.log("error: get location for address failed: \(error.localizedDescription)")
         }
@@ -70,40 +90,83 @@ final class WeatherModel: NSObject, ObservableObject {
         return searchResult
     }
     
-    func getForecast() async {
+    func getForecast(dailyForecastOnly: Bool = false) async -> Error? {
         guard let city else {
             Logging.logger.log("error: no city when getting forecast")
-            return
+            return nil
         }
         currentWeather = nil
         
         #if os(watchOS)
-            await getForecastAndLocation(for: city)
+            return await getForecastAndLocation(for: city, dailyForecastOnly: dailyForecastOnly)
         #else
             if city.location != nil {
-                await getForecast(forLocation: city)
+                return await getForecast(forLocation: city)
             } else {
-                await getForecastAndLocation(for: city)
+                return await getForecastAndLocation(for: city, dailyForecastOnly: dailyForecastOnly)
             }
         #endif
     }
+    
+    // MARK: - Private
+    
+    fileprivate func getForecastAndLocation(for city: City, dailyForecastOnly: Bool = false) async -> Error? {
+        if let city = await getLocation(forAddress: city.longName) {
+            return await self.getForecast(forLocation: city, dailyForecastOnly: dailyForecastOnly)
+        }
+        return nil
+    }
 
-    func handle(dailyForecasts: Forecast<DayWeather>) {
-        dailyGraphData = []
-        for forecast in dailyForecasts.forecast {
-            dailyGraphData.append(GraphData(date: forecast.date, series: GraphData.Series.temperatureHigh.rawValue, temperature: forecast.highTemperature, symbol: forecast.symbolName))
-            dailyGraphData.append(GraphData(date: forecast.date, series: GraphData.Series.temperatureLow.rawValue, temperature: forecast.lowTemperature, symbol: forecast.symbolName))
+    fileprivate func getForecast(forLocation city: City, dailyForecastOnly: Bool = false) async -> Error? {
+        guard let location = city.location else {
+            Logging.logger.log("error: no location when getting forecast")
+            return nil
+        }
+        
+        do {
+            handle(dailyForecasts:  try await WeatherService.shared.weather(for: location, including: .daily))
+            if !dailyForecastOnly {
+                handle(hourlyForecasts: try await WeatherService.shared.weather(for: location, including: .hourly))
+                handle(minuteForecasts: try await WeatherService.shared.weather(for: location, including: .minute))
+                handle(currentWeather:  try await WeatherService.shared.weather(for: location, including: .current))
+            }
+        } catch {
+            Logging.logger.log("error when getting forecast: \(error)")
+            return error
+        }
+        
+        return nil
+    }
+
+    fileprivate func getAttribution(colorScheme: ColorScheme) async {
+        do {
+            let attribution = try await WeatherService.shared.attribution
+            self.legalPageURL = attribution.legalPageURL
+            self.attributionLogoURL = attribution.combinedMarkDarkURL
+            if colorScheme == .light {
+                self.attributionLogoURL = attribution.combinedMarkLightURL
+            }
+        } catch {
+            Logging.logger.log("error when getting attribution: \(error)")
         }
     }
 
-    func handle(hourlyForecasts: Forecast<HourWeather>) {
+    fileprivate func handle(dailyForecasts: Forecast<DayWeather>) {
+        dailyGraphData = []
+        for i in 0 ..< min(dailyForecasts.forecast.count, daysToDisplay) {
+            let forecast = dailyForecasts.forecast[i]
+            dailyGraphData.append(GraphData(date: forecast.date, temperatureLow: forecast.lowTemperature.converted(to: Self.currentTemperatureUnit), temperatureHigh: forecast.highTemperature.converted(to: Self.currentTemperatureUnit), symbol: forecast.symbolName))
+        }
+    }
+
+    fileprivate func handle(hourlyForecasts: Forecast<HourWeather>) {
         houlyGraphData = []
         for forecast in hourlyForecasts.forecast {
-            houlyGraphData.append(GraphData(date: forecast.date, series: GraphData.Series.temperatureHigh.rawValue, temperature: forecast.temperature, symbol: forecast.symbolName))
+            houlyGraphData.append(GraphData(date: forecast.date, temperatureHigh: forecast.temperature.converted(to: Self.currentTemperatureUnit), symbol: forecast.symbolName))
         }
     }
     
-    func handle(minuteForecasts: Forecast<MinuteWeather>?) {
+    fileprivate func handle(minuteForecasts: Forecast<MinuteWeather>?) {
         if let minuteForecasts {
             minutelyGraphData = []
             for forecast in minuteForecasts.forecast {
@@ -126,50 +189,12 @@ final class WeatherModel: NSObject, ObservableObject {
                         symbol = "cloud.rain"
                     }
                 }
-                minutelyGraphData?.append(GraphData(date: forecast.date, series: GraphData.Series.precipitation.rawValue, precipitation: forecast.precipitationIntensity, symbol: symbol))
+                minutelyGraphData?.append(GraphData(date: forecast.date, precipitation: forecast.precipitationIntensity, symbol: symbol))
             }
         }
     }
     
-    func handle(currentWeather: CurrentWeather) {
+    fileprivate func handle(currentWeather: CurrentWeather) {
         self.currentWeather = currentWeather
-    }
-
-    func getAttribution(colorScheme: ColorScheme) async {
-        do {
-            let attribution = try await WeatherService.shared.attribution
-            self.legalPageURL = attribution.legalPageURL
-            self.attributionLogoURL = attribution.combinedMarkDarkURL
-            if colorScheme == .light {
-                self.attributionLogoURL = attribution.combinedMarkLightURL
-            }
-            self.objectWillChange.send()
-        } catch {
-            Logging.logger.log("error when getting attribution: \(error)")
-        }
-    }
-    
-    // MARK: - Private
-    
-    fileprivate func getForecastAndLocation(for city: City) async {
-        if let city = await getLocation(forAddress: city.longName) {
-            await self.getForecast(forLocation: city)
-        }
-    }
-
-    func getForecast(forLocation city: City) async {
-        guard let location = city.location else {
-            Logging.logger.log("error: no location when getting forecast")
-            return
-        }
-        
-        do {
-            handle(dailyForecasts:  try await WeatherService.shared.weather(for: location, including: .daily))
-            handle(hourlyForecasts: try await WeatherService.shared.weather(for: location, including: .hourly))
-            handle(minuteForecasts: try await WeatherService.shared.weather(for: location, including: .minute))
-            handle(currentWeather:  try await WeatherService.shared.weather(for: location, including: .current))
-        } catch {
-            Logging.logger.log("error when getting forecast: \(error)")
-        }
     }
 }

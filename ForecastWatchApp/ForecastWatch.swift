@@ -1,12 +1,12 @@
 //
-//  ForecastApp.swift
+//  ForecastWatch.swift
 //  Forecast Watch App
 //
 
 import SwiftUI
 
 @main
-struct ForecastWatchApp: App {
+struct ForecastWatch: App {
     var body: some Scene {
         WindowGroup {
             LocationView()

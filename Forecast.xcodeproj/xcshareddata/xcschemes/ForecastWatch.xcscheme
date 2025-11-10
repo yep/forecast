@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Scheme
-   LastUpgradeVersion = "1610"
+   LastUpgradeVersion = "2600"
    version = "1.7">
    <BuildAction
       parallelizeBuildables = "YES"
@@ -17,7 +17,7 @@
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "0126ABF62CCAB8F0005AF2FF"
                BuildableName = "Forecast.app"
-               BlueprintName = "ForecastWatchApp"
+               BlueprintName = "ForecastWatch"
                ReferencedContainer = "container:Forecast.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -60,7 +60,7 @@
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "0126ABF62CCAB8F0005AF2FF"
             BuildableName = "Forecast.app"
-            BlueprintName = "ForecastWatchApp"
+            BlueprintName = "ForecastWatch"
             ReferencedContainer = "container:Forecast.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
@@ -77,7 +77,7 @@
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "0126ABF62CCAB8F0005AF2FF"
             BuildableName = "Forecast.app"
-            BlueprintName = "ForecastWatchApp"
+            BlueprintName = "ForecastWatch"
             ReferencedContainer = "container:Forecast.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
